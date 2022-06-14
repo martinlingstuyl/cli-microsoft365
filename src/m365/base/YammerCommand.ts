@@ -5,6 +5,10 @@ export default abstract class YammerCommand extends Command {
   protected get resource(): string {
     return 'https://www.yammer.com/api';
   }
+  
+  public resourceUri(): string | undefined {
+    return this.resource;
+  }
 
   protected handleRejectedODataJsonPromise(response: any, logger: Logger, callback: (err?: any) => void): void {
     if (response.statusCode === 404) {

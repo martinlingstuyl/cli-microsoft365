@@ -9,6 +9,7 @@ import { aadGroup } from '../../../../utils/aadGroup';
 import { planner } from '../../../../utils/planner';
 import GraphCommand from '../../../base/GraphCommand';
 import commands from '../../commands';
+import { ScopeInformation } from '../../../../auth/ScopeInformation';
 
 interface CommandArgs {
   options: Options;
@@ -50,6 +51,13 @@ class PlannerTaskGetCommand extends GraphCommand {
     telemetryProps.ownerGroupId = typeof args.options.ownerGroupId !== 'undefined';
     telemetryProps.ownerGroupName = typeof args.options.ownerGroupName !== 'undefined';
     return telemetryProps;
+  }
+
+  public scopes(): ScopeInformation | undefined {
+    return {
+      delegated: [ 'Tasks.Read', 'Tasks.ReadWrite', 'Group.Read.All', 'Group.ReadWrite.All' ],
+      appOnly: [ 'Tasks.Read.All', 'Tasks.ReadWrite.All', 'Group.Read.All', 'Group.ReadWrite.All' ]
+    }; 
   }
 
   public commandAction(logger: Logger, args: CommandArgs, cb: () => void): void {

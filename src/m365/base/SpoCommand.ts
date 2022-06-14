@@ -4,6 +4,11 @@ import Command, { CommandArgs, CommandError } from '../../Command';
 const csomDefs = require('../../../csom.json');
 
 export default abstract class SpoCommand extends Command {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public resourceUri(args?: CommandArgs): string | undefined {
+    return 'https://microsoft.sharepoint-df.com';
+  }
+
   /**
    * Defines list of options that contain URLs in spo commands. CLI will use
    * this list to expand server-relative URLs specified in these options to

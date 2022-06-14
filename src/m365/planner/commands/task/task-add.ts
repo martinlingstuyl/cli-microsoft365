@@ -9,6 +9,7 @@ import { accessToken, formatting, validation } from '../../../../utils';
 import GraphCommand from '../../../base/GraphCommand';
 import commands from '../../commands';
 import { aadGroup } from '../../../../utils/aadGroup';
+import { ScopeInformation } from '../../../../auth/ScopeInformation';
 
 interface CommandArgs {
   options: Options;
@@ -41,6 +42,14 @@ class PlannerTaskAddCommand extends GraphCommand {
 
   public get description(): string {
     return 'Adds a new Microsoft Planner Task';
+  }
+
+  
+  public scopes(): ScopeInformation | undefined {
+    return {
+      delegated: [ 'Tasks.ReadWrite' ],
+      appOnly: [ 'Tasks.ReadWrite.All' ]
+    }; 
   }
 
   public getTelemetryProperties(args: CommandArgs): any {

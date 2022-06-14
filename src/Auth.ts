@@ -701,6 +701,30 @@ export class Auth {
 
     return isAppOnlyAuth;
   }
+
+  public static getScopesFromToken(accessToken: string): string[] | undefined {
+    let scopes: string[] | undefined;
+
+    if (!accessToken || accessToken.length === 0) {
+      return scopes;
+    }
+
+    const chunks = accessToken.split('.');
+    if (chunks.length !== 3) {
+      return scopes;
+    }
+
+    const tokenString: string = Buffer.from(chunks[1], 'base64').toString();
+    try {
+      const token: any = JSON.parse(tokenString);
+      const isAppOnlyAuth = !token.upn;
+      scopes = isAppOnlyAuth ? token.roles : token.scp.split(' ');
+    }
+    catch {
+    }
+
+    return scopes;
+  }
 }
 
 export default new Auth();

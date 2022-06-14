@@ -1,3 +1,4 @@
+import { ScopeInformation } from '../../../../auth/ScopeInformation';
 import { Logger } from '../../../../cli';
 import request from '../../../../request';
 import PowerBICommand from '../../../base/PowerBICommand';
@@ -15,6 +16,12 @@ class PpGatewayListCommand extends PowerBICommand {
   public defaultProperties(): string[] | undefined {
     return ['id', 'name'];
   }
+
+  public scopes(): ScopeInformation | undefined {
+    return {
+      delegated: [ 'Gateway.Read.All' ]
+    }; 
+  }  
 
   public commandAction(logger: Logger, args: any, cb: () => void): void {
     if (this.verbose) {

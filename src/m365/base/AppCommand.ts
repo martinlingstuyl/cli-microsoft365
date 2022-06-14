@@ -21,6 +21,10 @@ export default abstract class AppCommand extends Command {
     return 'https://graph.microsoft.com';
   }
 
+  public resourceUri(): string | undefined {
+    return this.resource;
+  }
+
   public action(logger: Logger, args: AppCommandArgs, cb: (err?: any) => void): void {
     const m365rcJsonPath: string = '.m365rc.json';
 

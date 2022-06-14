@@ -1,11 +1,14 @@
 import type * as Chalk from 'chalk';
+import { last } from 'lodash';
 import appInsights from './appInsights';
-import auth from './Auth';
+import auth, { Auth } from './Auth';
+import { ScopeInformation } from './auth/ScopeInformation';
 import { Cli } from './cli';
 import { Logger } from './cli/Logger';
 import GlobalOptions from './GlobalOptions';
 import request from './request';
-import { GraphResponseError } from './utils';
+import { settingsNames } from './settingsNames';
+import { GraphResponseError, spo } from './utils';
 
 export interface CommandOption {
   option: string;
@@ -105,14 +108,16 @@ export default abstract class Command {
   public action(logger: Logger, args: CommandArgs, cb: (err?: any) => void): void {
     auth
       .restoreAuth()
-      .then((): void => {
+      .then(async _ => {
         this.initAction(args, logger);
 
         if (!auth.service.connected) {
           cb(new CommandError('Log in to Microsoft 365 first'));
           return;
         }
-
+        
+        await this.validatePermissionScopesOnToken(args, logger);
+        
         this.commandAction(logger, args, cb);
       }, (error: any): void => {
         cb(new CommandError(error));
@@ -351,5 +356,87 @@ export default abstract class Command {
     unknownOptionsNames.forEach(o => {
       payload[o] = unknownOptions[o];
     });
+  }
+
+  public scopes(): ScopeInformation | undefined {
+    return;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public resourceUri(args?: CommandArgs): string | undefined {
+    return;
+  }
+
+  private async validatePermissionScopesOnToken(args: CommandArgs, logger: Logger): Promise<void> {
+    const skipScopeValidation = Cli.getInstance().getSettingWithDefaultValue<boolean>(settingsNames.skipScopeValidation, false);
+    if (skipScopeValidation) {
+      return;
+    }
+          
+    const graphToken = auth.service.accessTokens[auth.defaultResource];
+    const scopes = this.scopes();
+    const appOnlyMode = Auth.isAppOnlyAuth(graphToken.accessToken);
+    const scopesToValidate = appOnlyMode ? scopes?.appOnly : scopes?.delegated;
+    
+    if (!scopesToValidate || scopesToValidate.length === 0) {
+      return;
+    }
+
+    const resourceUri = await this.ensureResourceUri(args, logger, scopesToValidate);
+    
+    if (!resourceUri) {
+      return;
+    }
+
+    const resource = Auth.getResourceFromUrl(resourceUri!);      
+    const accessToken = await auth.ensureAccessToken(resource, logger, this.debug);
+
+    if (accessToken) {      
+      const tokenScopes = Auth.getScopesFromToken(accessToken);
+
+      if (tokenScopes) {
+        if (args.options.debug) {          
+          logger.logToStderr(`Validating ${appOnlyMode ? 'App only' : 'delegated'} scopes ${scopesToValidate.join(', ')}.`);
+          logger.logToStderr(`Scopes found on token: ${tokenScopes?.join(', ')}`);
+        }
+    
+        if (!tokenScopes
+          .map(s => s.indexOf('/') > -1 ? last(s.split('/')) : s)
+          .some(s => scopesToValidate.find(sc => sc === s))) {          
+          this.warn(logger, `Warning: you need one of the following permission scopes to execute this command: ${scopesToValidate.slice(0, 3).join(", ")}`);
+        }    
+      }
+      else {
+        if (args.options.debug) {          
+          logger.logToStderr(`No permission scopes found on token.`);
+        }
+      }
+    } 
+    else {
+      if (args.options.debug) {          
+        logger.logToStderr(`No token found to verify permission scopes for.`);
+      }
+    }
+  }
+
+  private async ensureResourceUri(args: CommandArgs, logger: Logger, scopesToValidate: string[]): Promise<string | undefined> {
+    let resourceUri = this.resourceUri(args);
+    
+    if (resourceUri === 'https://microsoft.sharepoint-df.com') {
+      resourceUri = await this.discoverSpoUrl(logger, scopesToValidate);
+    }
+
+    return resourceUri;
+  }
+  
+  private async discoverSpoUrl(logger: Logger, scopesToValidate: string[]): Promise<string | undefined> {
+    try {
+      return await spo.getSpoUrl(logger, this.debug);
+    } 
+    catch {
+      this.warn(logger, `Warning: the necessary permissions to execute this command could not be validated because SharePoint site discovery failed. Configure the SharePoint url using 'spo set --url https://tenant.sharepoint.com', or add one of the following MS Graph permission scopes to enable site discovery: Sites.Read.All, Sites.ReadWrite.All.`);          
+      this.warn(logger, `To execute the command, you'll also need one of the following permission scopes: ${scopesToValidate.slice(0, 3).join(", ")}`);
+      return;
+    }
   }
 }

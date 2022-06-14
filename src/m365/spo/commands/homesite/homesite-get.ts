@@ -1,3 +1,4 @@
+import { ScopeInformation } from '../../../../auth/ScopeInformation';
 import { Logger } from '../../../../cli';
 import GlobalOptions from '../../../../GlobalOptions';
 import request from '../../../../request';
@@ -16,6 +17,12 @@ class SpoHomeSiteGetCommand extends SpoCommand {
 
   public get description(): string {
     return 'Gets information about the Home Site';
+  }
+
+  public scopes(): ScopeInformation | undefined {
+    return {
+      delegated: [ 'User.Read', 'AllSites.Read', 'AllSites.Write', 'AllSites.Manage', 'AllSites.FullControl' ]
+    }; 
   }
 
   public commandAction(logger: Logger, args: CommandArgs, cb: (err?: any) => void): void {

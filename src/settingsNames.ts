@@ -11,7 +11,8 @@ const settingsNames = {
   output: 'output',
   printErrorsAsPlainText: 'printErrorsAsPlainText',
   prompt: 'prompt',
-  showHelpOnFailure: 'showHelpOnFailure'
+  showHelpOnFailure: 'showHelpOnFailure',
+  skipScopeValidation: 'skipScopeValidation'
 };
 
 export { settingsNames };

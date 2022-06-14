@@ -1,3 +1,4 @@
+import { ScopeInformation } from '../../../../auth/ScopeInformation';
 import { Logger } from '../../../../cli';
 import {
   CommandOption
@@ -28,6 +29,17 @@ class SpoListGetCommand extends SpoCommand {
 
   public get description(): string {
     return 'Gets information about the specific list';
+  }
+  
+  public scopes(): ScopeInformation | undefined {
+    return {
+      delegated: [ 'AllSites.Read', 'AllSites.Write', 'AllSites.Manage', 'AllSites.FullControl' ],
+      appOnly: ['Sites.Read.All', 'Sites.ReadWrite.All', 'Sites.ReadWrite.All', 'Sites.Manage.All', 'Sites.FullControl.All', 'Sites.Selected']
+    }; 
+  }
+  
+  public resourceUri(args: CommandArgs): string | undefined {
+    return args.options.webUrl;
   }
 
   public getTelemetryProperties(args: CommandArgs): any {

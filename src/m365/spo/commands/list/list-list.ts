@@ -1,3 +1,4 @@
+import { ScopeInformation } from '../../../../auth/ScopeInformation';
 import { Logger } from '../../../../cli';
 import {
   CommandOption
@@ -26,6 +27,17 @@ class SpoListListCommand extends SpoCommand {
     return 'Lists all available list in the specified site';
   }
 
+  public scopes(): ScopeInformation | undefined {
+    return {
+      delegated: [ 'AllSites.Manage', 'AllSites.FullControl' ],
+      appOnly: ['Sites.Manage.All', 'Sites.FullControl.All', 'Sites.Selected']
+    }; 
+  }
+
+  public resourceUri(args: CommandArgs): string | undefined {
+    return args.options.webUrl;
+  }
+  
   public defaultProperties(): string[] | undefined {
     return ['Title', 'Url', 'Id'];
   }
